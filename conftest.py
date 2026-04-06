@@ -1,22 +1,29 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database import Base, Student, Subject, get_db
 
+from config import Config
+from models import Base
 
-TEST_DATABASE_URL = "postgresql://postgres:Vlada@2006@localhost:5432/42704_test"
 
 @pytest.fixture(scope="session")
 def engine():
-    """Создаем engine для тестовой БД"""
-    engine = create_engine(TEST_DATABASE_URL)
+    """Создает engine для тестовой БД"""
+    database_url = Config.get_database_url(test=True)
+    engine = create_engine(database_url)
+
+    # Создаем все таблицы
     Base.metadata.create_all(bind=engine)
+
     yield engine
+
+    # Удаляем все таблицы после тестов
     Base.metadata.drop_all(bind=engine)
+
 
 @pytest.fixture(scope="function")
 def db_session(engine):
-    """Создаем сессию для каждого теста"""
+    """Создает сессию для каждого теста"""
     connection = engine.connect()
     transaction = connection.begin()
     session = sessionmaker(bind=connection)()
@@ -27,6 +34,7 @@ def db_session(engine):
     transaction.rollback()
     connection.close()
 
+
 @pytest.fixture
 def sample_student_data():
     """Пример данных студента для тестов"""
@@ -36,6 +44,7 @@ def sample_student_data():
         "email": "ivan.petrov@example.com",
         "group_name": "CS-101"
     }
+
 
 @pytest.fixture
 def sample_subject_data():
